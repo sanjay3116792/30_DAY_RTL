@@ -1,0 +1,18 @@
+module PIPO(input logic clk,rst,sel,
+            input logic [3:0]d_in,
+            output logic [3:0]d_out);
+
+  always_ff @(posedge clk or posedge rst) begin
+    
+    if (rst)begin
+      d_out <= 4'b0000;
+    end 
+    
+   else if (sel == 1'b0)
+      d_out <= d_in;
+    
+    else if (sel == 1'b1)
+      d_out <= d_in >>1;
+    
+  end
+endmodule
