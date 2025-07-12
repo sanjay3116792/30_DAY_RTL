@@ -1,0 +1,55 @@
+module SR_FF(clk,rst,s,r,q,qbar);
+
+input clk,rst,s,r;
+output reg q,qbar;
+
+always@(posedge clk) begin
+if(rst)begin
+q<=0;
+qbar<=1;
+end 
+else begin
+case({s,r})
+
+2'b00:begin q<=q;qbar<=qbar; end 
+2'b01:begin q<=0;qbar<=1; end 
+2'b10:begin q<=1;qbar<=0;   end 
+
+endcase
+end 
+end 
+endmodule 
+
+
+///////////////////////////////////////////////////
+
+
+module SR_FF_TB();
+
+SR_FF UUT(.clk(clk),.rst(rst),.q(q),.qbar(qbar),.s(s),.r(r));
+wire q,qbar;
+reg clk,rst,s,r;
+initial begin clk=0; 
+forever #5 clk=~clk; end
+always@(posedge clk)begin
+
+
+$monitor("rst=%0b\ttime=%0t\tS=\tR=%0b\t",rst,$time,s,r);
+rst=0;
+
+s=0;
+r=0;
+
+#20;
+s=0;
+r=1;
+
+#50;
+s=1;
+r=0;
+
+#50;
+s=1;
+r=1;
+#100;
+$finish;
