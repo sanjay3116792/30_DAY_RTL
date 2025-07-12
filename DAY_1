@@ -14,3 +14,35 @@ end
     end 
     
 endmodule
+
+///////////////////////////////////////////////////
+
+
+module tb_for_up_count();
+    up_counter_4_bit dut(.clk(clk),.rst(rst),.count(count));
+    
+    reg clk,rst;
+  wire [3:0]count;
+    initial
+      clk = 0;
+    always #5 clk = ~clk;
+    
+    initial begin
+    $monitor("time %0t | clk %0b | rst %0b | count %0d",$time,clk,rst,count);
+    rst = 1;
+    #10;
+    rst = 0;
+    #100;
+    rst = 1;
+    #10;
+    rst = 0;
+    #100;
+    $finish;
+    end 
+    
+  initial begin
+    $dumpfile("dump.vcd");
+    $dumpvars;
+  end 
+    
+endmodule
