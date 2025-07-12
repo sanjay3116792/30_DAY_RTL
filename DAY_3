@@ -1,0 +1,47 @@
+module SR(input s,r,clk,rst,
+output q,qbar,
+output a,b);
+wire a1,b1,q1,qbar1;
+nand n1(a1,s,clk,~rst);
+nand n2(b1,r,clk,~rst);
+nand n3(q1,qbar1,a1);
+nand n4(qbar1,q1,b1);
+assign q = q1;
+assign qbar = ~q;
+assign a = a1;
+assign b = b1;
+
+endmodule
+
+
+/////////////////////////////////////////////////////
+
+
+
+module SR_tb();
+reg s,r,clk,rst;
+wire q,qbar,a,b;
+SR uut(.s(s),.r(r),.clk(clk),.rst(rst),.q(q),.qbar(qbar),.a(a),.b(b));
+initial begin
+
+clk=0;
+forever #5 clk = ~clk;
+end 
+initial begin 
+$monitor("TIME : %t | RST : %0b | S : %0b | R : &0b | Q : %0b | QBAR : %0b ",$time,rst,s,r,q,qbar);
+rst = 1;
+s=0;r=0;
+#10;
+rst = 0;
+s = 0; r = 0;
+#20;
+s = 0; r = 1;
+#20;
+s = 1; r = 0;
+#20;
+s = 1; r = 1;
+#20;
+$finish;
+
+end 
+endmodule
