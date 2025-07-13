@@ -1,0 +1,57 @@
+module PARITY_GEN_CHECK(
+  input  logic [3:0]data_in,
+  input  logic sel,
+  input  logic rx,
+  output logic parity,
+  output logic tx,
+  output logic check
+);
+  
+   assign parity = ^data_in;
+  
+  always @(*)begin
+    if(sel == 1)begin
+      tx = parity;  //odd parity
+    end 
+    else begin
+      tx = ~parity; //even parity
+    end 
+    check = (tx == rx);
+  end 
+  
+endmodule
+
+////////////////////////////////////////////////////////////////
+
+module tb;
+  
+  logic [3:0]data_in;
+  logic sel;
+  logic rx;
+  logic parity;
+  logic tx;
+  logic check;
+  
+  PARITY_GEN_CHECK UUT(.data_in(data_in),.sel(sel),.rx(rx),.tx(tx),.parity(parity),.check(check));
+  
+  initial begin
+    sel = 0;
+    rx = 0;
+    data_in = 0;
+  end 
+  
+  initial begin
+    $monitor("data_in : %0b sel : %0b check : %0b",data_in,sel,check);
+    repeat(4) begin
+    data_in = $urandom_range(0,15);
+   #1  sel = 1;
+      #1 rx = tx;
+      #1 rx = ~tx;
+      
+   #1  sel = 0;
+      #1 rx = tx;
+      #1 rx = ~tx;
+    end 
+    #10 $finish;
+  end 
+endmodule 
