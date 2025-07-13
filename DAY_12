@@ -1,0 +1,70 @@
+module MS_FF(
+  input logic d_in,
+  input logic clk,rst,
+  output logic q,
+  output q_bar
+);
+  
+    logic q1;
+  
+  //Master
+  always_latch begin
+    if(rst)begin
+      q1 = 0;
+    end 
+    
+    else if(clk) begin
+      q1 = d_in; 
+    end 
+    
+  end 
+  //Slave
+always_latch begin    
+  if(rst)begin
+      q = 0;
+    end 
+    
+  else if(!clk) begin
+      q = q1; 
+    end 
+    
+  end 
+  assign q_bar = ~q;
+ 
+  
+endmodule
+
+/////////////////////////
+
+module MS_FF_TB();
+   logic clk,rst,d_in;
+   logic q,q_bar;
+  
+  MS_FF UUT(.clk(clk),.rst(rst),.q(q),.q_bar(q_bar),.d_in(d_in));
+  
+  initial clk = 0;
+  always begin
+    #5 clk = ~clk;
+  end 
+ 
+   
+  
+  initial begin
+    @(posedge clk);
+    $monitor("RST = %0b TIME = %0t dATA_IN = %0b Q = %0b QBAR = %0b",rst,$time,d_in,q,q_bar);
+   rst = 1;
+   d_in = 0;
+    #20;
+    rst = 0;
+  
+  repeat (10) begin
+    @(posedge clk);
+     d_in = $urandom_range(0,1);
+    #5;
+  end 
+  end
+  initial begin
+     $dumpfile("dump.vcd"); $dumpvars;
+    #100 $finish;
+  end 
+endmodule 
