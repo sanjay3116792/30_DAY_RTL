@@ -1,0 +1,78 @@
+module D_FF(
+  input logic data_in,clk,rst,
+  output logic data_out);
+  
+  always_ff@(posedge clk or posedge rst)begin
+  
+    if(rst)begin 
+      data_out <= 1'b0;
+    end 
+    
+    else begin 
+      data_out <= data_in;
+    end
+  end 
+  
+
+endmodule
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+`include "D_FF.sv"
+
+module SERIAL_IN_SERIAL_OUT(
+  input logic clk,rst,
+  input logic d_in,
+  output d_out);
+  
+  logic [3:0]d;
+  
+  D_FF D1(.data_in(d_in),.clk(clk),.rst(rst),.data_out(d[0]));
+  D_FF D2(.data_in(d[0]),.clk(clk),.rst(rst),.data_out(d[1]));
+  D_FF D3(.data_in(d[1]),.clk(clk),.rst(rst),.data_out(d[2]));
+  D_FF D4(.data_in(d[2]),.clk(clk),.rst(rst),.data_out(d[3]));
+  
+  assign d_out = d[3];
+endmodule
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+module SISO_TB();
+ logic clk,rst;
+  logic d_in;
+ logic d_out;
+  
+  SERIAL_IN_SERIAL_OUT UUT(.clk(clk),.rst(rst),.d_in(d_in),.d_out(d_out));
+  
+  initial begin
+    
+    clk = 0;
+    forever #5 clk = ~clk;
+
+  end 
+  
+  
+    task send_serial_data(input [3:0] data);
+    for (int i = 0; i < 4; i++) begin
+      d_in = data[i];
+      @(posedge clk);
+    end
+  endtask
+  
+  
+  
+  always begin 
+    
+    rst = 1;
+    d_in = 0;
+    @(posedge clk);
+    rst = 0;
+    send_serial_data(4'b1011);
+    repeat (8) @(posedge clk);
+    $finish;
+  end 
+ always begin
+    @(posedge clk);
+   $monitor("RST = %0b TIME = %0t DATA_IN = %0b DATA_OUT = %0b",rst,$time,d_in,d_out); 
+  end
+endmodule
