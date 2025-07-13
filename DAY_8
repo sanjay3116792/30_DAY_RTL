@@ -1,0 +1,56 @@
+module ENCODER(
+input logic [7:0]a,
+output logic [2:0]out_e,
+input logic clk,rst
+    );
+    
+    logic [2:0]out;
+    
+    assign out[0] = a[1] | a[3] | a[5] | a[7];
+    assign out[1] = a[2] | a[3] | a[6] | a[7];
+    assign out[2] = a[4] | a[5] | a[6] | a[7];
+    
+    always@(posedge clk) begin
+    
+    
+    
+    if(rst)begin 
+    out_e = 3'b0;
+    end 
+    else begin 
+    out_e = out;
+    end 
+    end
+endmodule
+
+
+//////////////////////////////////////////////
+
+module ENCODER_TB();
+
+     logic [7:0]a;
+     logic [2:0]out_e;
+     logic clk,rst;
+     
+    ENCODER UUT(.a(a),.out_e(out_e),.clk(clk),.rst(rst));
+    
+    initial begin 
+    clk = 0;
+    forever #10 clk = ~clk;
+    end 
+    
+    initial begin
+        rst = 1; a = 8'b0;
+        #12 rst = 0;
+
+        repeat (10) begin
+          @(negedge clk);    
+            a = $urandom;
+        end
+      #100 $finish;
+    end 
+  
+     always @(posedge clk) begin
+        $display("Time = %0t | a = %b | out_e = %b", $time, a, out_e);
+    end 
+endmodule
