@@ -1,0 +1,62 @@
+module traffic_light(input logic clk,rst,
+                     output logic [1:0]light);
+  
+  typedef enum logic[1:0] {ready,go,stop}state;
+  state pre_state,nxt_state;
+  
+ localparam logic [1:0] green  = 2'b00;
+localparam logic [1:0] yellow = 2'b01;
+localparam logic [1:0] red    = 2'b10;
+
+  
+  always@(posedge clk or posedge rst)begin
+    if(rst)begin
+      nxt_state <= go;
+    end 
+    else begin
+     pre_state <= nxt_state; 
+    end 
+  end
+ 
+  always@(posedge clk or posedge rst)begin
+    case(pre_state) 
+      ready : nxt_state = go;
+      go : nxt_state = stop;
+      stop : nxt_state = ready;
+    endcase 
+  end
+      
+  always@(posedge clk or posedge rst)begin
+    case(pre_state) 
+      go : light = green;
+      ready : light = yellow;
+      stop : light = red;
+    endcase 
+  end
+endmodule 
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+module TB;
+  logic clk,rst;
+  logic [1:0]light;
+  
+  traffic_light UUT(.clk(clk),.rst(rst),.light(light));
+  
+  initial clk = 0;
+  always #5 clk = ~clk;
+  
+initial begin
+    $display("Time\tReset\tLight");
+    $monitor("%0t\t%b\t%0b", $time, rst, light);
+  end
+   
+  always@(posedge clk or posedge rst)begin
+    
+    rst = 1;
+    #10;
+    rst = 0;
+    #200;
+    $finish;
+  end 
+endmodule
