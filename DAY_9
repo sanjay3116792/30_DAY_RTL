@@ -1,7 +1,7 @@
 module PRIORITY_ENCODER(
   input logic [7:0]sel,
   input logic clk,
-  input logic rst,
+  input logic rst,    
   output logic [2:0]out
 );
   
