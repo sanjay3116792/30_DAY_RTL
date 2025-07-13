@@ -1,0 +1,56 @@
+module PIPO(input logic clk,rst,sel,
+            input logic [3:0]d_in,
+            output logic [3:0]d_out);
+
+  always_ff @(posedge clk or posedge rst) begin
+    
+    if (rst)begin
+      d_out <= 4'b0000;
+    end 
+    
+   else if (sel == 1'b0)
+      d_out <= d_in;
+    
+    else if (sel == 1'b1)
+      d_out <= d_in >>1;
+    
+  end
+endmodule
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+module PIPO_TB;
+  logic clk,rst,sel;
+  logic [3:0]d_in;
+  logic [3:0]d_out;
+  
+  PIPO UUT(.clk(clk),.rst(rst),.sel(sel),.d_in(d_in),.d_out(d_out));
+  
+  initial begin
+    clk = 0;
+    
+  end 
+  #5 always clk = ~clk;
+  initial begin
+    $monitor("RST = %0b SEL = %0b TIME = %0t DATA IN = %0b DATA OUT = %0b",rst,sel,$time,d_in,d_out);  
+  end 
+  
+  initial begin
+  
+    rst = 1;
+    #10 sel = 0;
+    #10 rst = 0;
+    #10 d_in = 4'b1011;
+    #10 sel = 1;
+    
+    #10 rst = 1;
+    #10 rst = 0;
+    #10 sel = 0;
+    #10 d_in = 4'b1100;
+    #10 sel = 1;
+  end 
+  initial begin
+  
+    #500 $finish;
+  end 
+endmodule
