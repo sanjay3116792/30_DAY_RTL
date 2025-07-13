@@ -1,0 +1,61 @@
+module up_down(
+    input logic clk,rst,
+    input logic sel,
+    output logic [3:0]count 
+);
+ 
+  
+  always@(posedge clk)begin
+    if(rst)begin
+      count = 4'b0;
+    end 
+    
+    else begin
+      
+    case(sel)
+      0 : begin
+        count = count + 1;
+      end 
+      
+      1 : begin
+        count = count - 1;
+      end 
+    endcase
+    end 
+    end 
+endmodule  
+
+        ///////////////////////////////////////////////////////////////////////
+
+        module tb;
+  logic clk,rst;
+  logic sel;
+  logic [3:0]count;
+  
+  up_down UUT(.clk(clk),.rst(rst),.sel(sel),.count(count));
+  
+  initial begin
+    clk = 0;
+    forever #5 clk = ~clk;
+  end 
+ initial begin
+    rst = 1; sel = 0;
+   repeat(2) @(posedge clk);
+   
+    rst = 0;
+
+    // Count Up
+    sel = 0;
+   repeat(15) @(posedge clk);
+
+    // Count Down
+    sel = 1;
+   repeat(15) @(posedge clk);
+
+    $finish;
+  end
+  
+  initial begin
+    $monitor("rst : %0b,clk : %0t,sel : %0b,count : %0d",rst,$time,sel,count);
+  end 
+endmodule
