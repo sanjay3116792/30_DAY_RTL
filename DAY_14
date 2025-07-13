@@ -6,7 +6,7 @@ module D_FF(
   
     if(rst)begin 
       data_out <= 1'b0;
-    end 
+    end   
     
     else begin 
       data_out <= data_in;
