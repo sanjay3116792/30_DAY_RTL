@@ -1,0 +1,62 @@
+module binary2gray(
+  input logic [3:0]data_in,
+  input logic clk,rst,
+  output logic [3:0]data_out 
+);
+   
+
+  always@(posedge clk)begin
+    if(rst)begin
+      data_out <= 4'b0000;
+    end 
+    
+    else begin
+      
+      data_out[3] <= data_in[3];
+      
+      for(int i=2 ; i>=0 ; i--)begin
+        data_out[i] <= data_in[i+1] ^ data_in[i];
+      end 
+    end 
+  end 
+  
+endmodule
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+module tb;
+  logic [3:0]data_in;
+  logic clk,rst;
+  logic [3:0]data_out;
+  
+  binary2gray UUT(
+    .data_in(data_in),
+    .clk(clk),
+    .rst(rst),
+    .data_out(data_out));
+  
+  initial begin
+   clk = 0;
+   forever #5 clk = ~clk;
+  end 
+  initial begin
+    rst = 1;
+   #10;
+   rst = 0;
+   
+  end 
+  
+  always@(posedge clk)begin
+      data_in = $urandom_range(15,0); 
+  end
+  
+  always@(posedge clk) begin
+     $monitor("rst : %0b time : %0t data_in : %b data_out : %b",rst,$time,data_in,data_out);
+  end
+  
+  initial begin
+    #200 $finish;
+  end 
+  
+endmodule
