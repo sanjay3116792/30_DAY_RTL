@@ -1,0 +1,89 @@
+module FULL_ADDER(
+  input logic a,b,c,
+  output logic sum,carry);
+  
+     assign sum = a^b^c;
+     assign carry = (a&b)|(b&c)|(c&a);
+     
+endmodule
+module CARRY_SKIP_ADDER(
+input logic [3:0]A,
+input logic [3:0]B,
+input logic C_in,rst,
+output logic [4:0]SUM_out,
+output logic CARRY
+    );
+    logic [3:0]CARR;
+    logic [3:0]SUM;
+    logic block_propagate;
+    logic next_carry;
+  logic [3:0]propagate;
+  
+    //Carry Generation
+    assign CARR[0] = ((A[0]&B[0])|((A[0]^B[0])&C_in));
+    assign CARR[1] = ((A[1]&B[1])|((A[1]^B[1])&((A[0]&B[0])|((A[0]^B[0])&C_in))));
+    assign CARR[2] = ((A[2]&B[2])|((A[2]^B[2])&((A[1]&B[1])|((A[1]^B[1])&((A[0]&B[0])|((A[0]^B[0])&C_in))))));
+    assign CARR[3] = ((A[3]&B[3])|((A[3]^B[3])&((A[2]&B[2])|((A[2]^B[2])&((A[1]&B[1])|((A[1]^B[1])&((A[0]&B[0])|((A[0]^B[0])&C_in))))))));
+
+
+    //Full adder
+  FULL_ADDER F0(.a(A[0]),.b(B[0]),.c(C_in),.sum(SUM[0]),.carry());
+    FULL_ADDER F1(.a(A[1]),.b(B[1]),.c(CARR[0]),.sum(SUM[1]),.carry());
+    FULL_ADDER F2(.a(A[2]),.b(B[2]),.c(CARR[1]),.sum(SUM[2]),.carry());
+    FULL_ADDER F3(.a(A[3]),.b(B[3]),.c(CARR[2]),.sum(SUM[3]),.carry());
+   
+    
+    // Propagate logic
+      assign propagate = A ^ B;
+   
+    // Block propagate signal for carry skip logic
+     assign block_propagate = &propagate;
+
+    // Final carry output with skip logic
+     assign next_carry = block_propagate ? C_in : CARR[3];
+    
+  always_comb begin
+        if (rst) begin
+         
+            SUM_out = 5'b0;
+            CARRY = 1'b0;
+        end else begin
+            SUM_out = {next_carry, SUM};
+            CARRY = next_carry;
+        end
+    end
+endmodule
+
+////////////////////////////////////////////////////////////////////////////
+
+
+module CARRY_SKIP_ADDER_TB();
+
+ logic [3:0]A;
+ logic [3:0]B;
+ logic C_in;
+ logic [4:0]SUM_out;
+ logic CARRY,rst;
+ 
+ CARRY_SKIP_ADDER UUT(.A(A),.B(B),.C_in(C_in),.SUM_out(SUM_out),.CARRY(CARRY),.rst(rst));
+
+  initial begin 
+    $monitor("RST = %0b\tA = %0d\tB = %0d\tC_in = %0b\tSUM = %0d  CARRY = %0b",rst,A,B,C_in,SUM_out,CARRY);
+    rst = 1;
+    #5 rst = 0;
+    
+
+    
+
+ /// randomly generating input
+ for(int i=0;i<10;i++)begin
+ A = $urandom_range(0,15); 
+ B = $urandom_range(0,15);
+ C_in = i%2;
+   #10;
+ end 
+      #100 $finish;
+ 
+ end 
+
+endmodule
