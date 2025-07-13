@@ -1,6 +1,6 @@
 module D_FF(
 input logic data_in,clk,rst,
-output logic q
+output logic q  
 );
   always_ff@(posedge clk)begin
     if(rst)
