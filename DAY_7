@@ -6,6 +6,10 @@ module FULL_ADDER(
      assign carry = (a&b)|(b&c)|(c&a);
      
 endmodule
+
+////////////////////////////////////////////////////////////////////////////
+
+
 module CARRY_SKIP_ADDER(
 input logic [3:0]A,
 input logic [3:0]B,
