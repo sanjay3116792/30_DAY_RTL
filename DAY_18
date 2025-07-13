@@ -1,6 +1,6 @@
 module LIFO(
   input logic [7:0]data_in,
-  input logic wr_en,re_en,clk,rst,
+  input logic wr_en,re_en,clk,rst,    
   output logic [7:0]data_out,
   output logic full,empty);
   
