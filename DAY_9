@@ -1,0 +1,71 @@
+module PRIORITY_ENCODER(
+  input logic [7:0]sel,
+  input logic clk,
+  input logic rst,
+  output logic [2:0]out
+);
+  
+  always@(posedge clk)begin
+    
+    if(rst)begin
+      out <= 3'b0;
+    end 
+    else begin
+      casez (sel)  ///treat z and ? as a wilecard it  can assign to any value
+      
+      8'b1??????? : out <= 3'b111 ;
+      8'b01?????? : out <= 3'b110 ;
+      8'b001????? : out <= 3'b101 ;
+      8'b0001???? : out <= 3'b010 ;
+      8'b00001??? : out <= 3'b011 ;
+      8'b000001?? : out <= 3'b010 ;
+      8'b0000001? : out <= 3'b001 ;
+      8'b00000001 : out <= 3'b000 ;
+      default : out <= 3'b000;
+    endcase
+    end 
+  end 
+  
+  
+endmodule 
+
+///////////////////////////////////////////////
+
+
+module PRIORITY_ENCODER_TB();
+  
+  logic [7:0]sel;
+  logic clk;
+  logic rst;
+  logic [2:0]out;
+  
+  PRIORITY_ENCODER UUT(.sel(sel),.clk(clk),.rst(rst),.out(out));
+  
+  initial begin
+    sel = 8'b0;
+    clk = 0;
+    forever #5 clk = ~clk;
+  end 
+  initial begin
+    rst = 1;
+    #10 rst = 0;
+    
+  end 
+  
+  initial begin
+    for(int i=0;i<20;i++)begin
+      @(posedge clk);
+	  sel = 8'b1 << i;      
+      #5;
+    end 
+      
+    
+  end 
+  initial begin     
+    @(posedge clk);
+    $monitor("RST = %0b SEL = %0b OUT = %0d ",rst,sel,out);  
+    #100 $finish;
+
+  end 
+  
+endmodule
