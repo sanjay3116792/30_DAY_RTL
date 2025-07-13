@@ -1,6 +1,6 @@
 module binary2gray(
   input logic [3:0]data_in,
-  input logic clk,rst,
+  input logic clk,rst,   
   output logic [3:0]data_out 
 );
    
