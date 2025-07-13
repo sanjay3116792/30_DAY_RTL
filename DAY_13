@@ -1,0 +1,79 @@
+module D_FF(
+input logic data_in,clk,rst,
+output logic q
+);
+  always_ff@(posedge clk)begin
+    if(rst)
+    q <= 0;
+     
+    else 
+    q <= data_in;
+     
+    end 
+   
+endmodule
+
+//////////////////////////////////////////////////////////////////////////////////
+
+`include "D_FF.sv"
+
+module serial_IN_serial_out_REG(
+  input logic d_in,clk,rst,
+  output logic [3:0]q
+    );
+ 
+  D_FF R1(.data_in(d_in),.clk(clk),.rst(rst),.q(q[0]));
+  D_FF R2(.data_in(q[0]),.clk(clk),.rst(rst),.q(q[1]));
+  D_FF R3(.data_in(q[1]),.clk(clk),.rst(rst),.q(q[2]));
+  D_FF R4(.data_in(q[2]),.clk(clk),.rst(rst),.q(q[3]));
+    
+endmodule
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////
+
+module TB();
+  logic d_in,clk,rst;
+  logic [3:0]q;
+  
+  serial_IN_serial_out_REG res(.d_in(d_in),.clk(clk),.rst(rst),.q(q));
+  
+  always #5 clk = ~clk; 
+  
+  initial begin
+      $monitor("RST = %0b TIME = %0t DATA_IN = %0b DATA_OUT = %b",rst,$time,d_in,q);
+    clk = 0;
+    rst =1;
+    d_in = 0;
+    #10;
+    @(posedge clk);
+    rst = 0;
+    
+ 
+  
+    d_in = 1; #1; @(posedge clk);
+    d_in = 0; #1; @(posedge clk);
+    d_in = 1; #1; @(posedge clk);
+    d_in = 1; #1; @(posedge clk);
+
+    d_in = 0; #1; 
+    
+    @(posedge clk);
+    rst = 1; #10;
+    rst = 0;
+
+    d_in = 1; #1; @(posedge clk);
+    d_in = 1; #1; @(posedge clk);
+    d_in = 0; #1; @(posedge clk);
+    d_in = 0; #1; @(posedge clk);
+     #10;
+    $finish;
+  end 
+  initial begin
+    $dumpfile("dump.vcd"); $dumpvars;
+   
+    
+  end 
+  
+endmodule
