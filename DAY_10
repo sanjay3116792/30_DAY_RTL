@@ -1,0 +1,54 @@
+module DECODER(
+  input logic [2:0]sel,
+  input logic clk,
+  output logic [7:0]out
+);
+   
+  always@(negedge clk)begin
+  
+        out = 3'b0;
+    case (sel)
+      3'b000 : out[0] = 1'b1;
+      3'b001 : out[1] = 1'b1;
+      3'b010 : out[2] = 1'b1;
+      3'b011 : out[3] = 1'b1;
+      3'b100 : out[4] = 1'b1;
+      3'b101 : out[5] = 1'b1;
+      3'b110 : out[6] = 1'b1;
+      3'b111 : out[7] = 1'b1;
+      
+      
+    endcase
+  end
+endmodule
+
+//////////////////////////////////////////////////////////
+
+module DECODER_TB();
+  
+  logic [2:0]sel;
+  logic clk;
+  logic [7:0]out;
+  
+  DECODER UUT(.sel(sel),.out(out),.clk(clk));
+  
+  
+  initial begin
+    sel = 3'b0;
+    clk = 0;
+    forever #5 clk = ~clk;
+  end
+  
+  always@(negedge clk)begin
+    $monitor("SEL = %0d  OUT = %b  CLK = %0d ",sel,out,$time);
+    for(int i=0;i<7;i++)begin
+      sel = i;
+      #10;
+    end 
+  end 
+  initial begin
+    #70;
+    $finish;
+  end 
+  
+endmodule
