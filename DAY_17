@@ -8,7 +8,7 @@ module PARITY_GEN_CHECK(
 );
   
    assign parity = ^data_in;
-  
+    
   always @(*)begin
     if(sel == 1)begin
       tx = parity;  //odd parity
