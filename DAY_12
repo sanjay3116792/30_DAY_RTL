@@ -4,7 +4,7 @@ module MS_FF(
   output logic q,
   output q_bar
 );
-  
+    
     logic q1;
   
   //Master
