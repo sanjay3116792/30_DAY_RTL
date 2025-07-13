@@ -1,0 +1,80 @@
+module full_add(
+  input logic a,b,c,
+  output logic sum,carry
+);
+  
+ assign sum = a^b^c;
+  assign carry = (a&b)|(b&c)|(c&a);
+endmodule
+
+
+module RIPPLE_CARRY_ADD(
+  input rst,
+  input logic [3:0]A,
+  input logic [3:0]B,
+  input logic C_in,
+  output logic [4:0]SUM,
+  output logic CARRY
+);
+  
+  logic [3:0]CARR;
+  logic [3:0]SUM1;
+  
+  full_add f3(A[0],B[0],C_in,SUM1[0],CARR[0]);
+  full_add f2(A[1],B[1],CARR[0],SUM1[1],CARR[1]);
+  full_add f1(A[2],B[2],CARR[1],SUM1[2],CARR[2]);
+  full_add f0(A[3],B[3],CARR[2],SUM1[3],CARR[3]);
+  
+  always@(*) begin
+    if(rst)begin
+      SUM <= 5'b00000;
+      CARRY <= 0;
+    end 
+    
+    else begin 
+      CARRY <= CARR[3];
+      SUM <= {CARR[3],SUM1};
+      #10;
+    end 
+  end 
+  
+endmodule
+
+
+/////////////////////////////////////////////////
+
+
+module TB();
+  
+  logic rst;
+  logic [3:0]A;
+  logic [3:0]B;
+  logic [4:0]SUM;
+  logic CARRY;
+  logic C_in;
+  
+  RIPPLE_CARRY_ADD UUT(.rst(rst),.A(A),.B(B),.C_in(C_in),.SUM(SUM),.CARRY(CARRY));
+  
+  initial begin
+    rst = 0;
+    A = 4'b0000;
+    B = 4'b0000;
+    C_in = 0;
+  end 
+ 
+  initial begin
+    
+    
+   for(int i=0;i<10;i++)begin
+     A = $urandom_range(0,15);
+     B = $urandom_range(0,15);
+     C_in = i%2;
+     #10;
+     $monitor("RST = %0b A = %0d B = %0d C_in = %0d SUM = %0d CARRY = %0d",rst,A,B,C_in,SUM,CARRY);
+   end 
+  end 
+  
+  
+  
+  
+endmodule
