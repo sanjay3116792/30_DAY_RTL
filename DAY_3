@@ -7,7 +7,7 @@ nand n2(b1,r,clk,~rst);
 nand n3(q1,qbar1,a1);
 nand n4(qbar1,q1,b1);
 assign q = q1;
-assign qbar = ~q;
+assign qbar = ~q;     
 assign a = a1;
 assign b = b1;
 
