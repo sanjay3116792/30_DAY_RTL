@@ -1,6 +1,6 @@
 module universal_shift_reg(
 input logic clk,
-input logic rst,
+input logic rst,  
 input logic l_in ,
 input logic r_in ,
 input logic [3:0]data_in,
