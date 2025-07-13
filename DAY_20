@@ -1,0 +1,98 @@
+module universal_shift_reg(
+input logic clk,
+input logic rst,
+input logic l_in ,
+input logic r_in ,
+input logic [3:0]data_in,
+input logic [1:0]sel,
+output logic [3:0]data_out
+ );
+  
+ always_ff@(posedge clk)begin
+ 
+ if(rst)begin
+   data_out <= 4'b0000;
+ end 
+   
+ else begin
+ 
+   case(sel)
+     2'b00 : begin // no change
+      data_out <= data_out;
+     end 
+     
+     2'b01 : begin//left shift
+         data_out <= {data_out[2:0],l_in};
+     end 
+     
+     2'b10 : begin//right shift
+       data_out <= {r_in,data_out[3:1]};
+     end
+     
+     2'b11 : begin// parallel loading
+       data_out <= data_in;
+     end 
+     //default : data_out <= data_out;
+     
+   endcase
+ end
+ end 
+endmodule
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+module tb;
+  logic clk;
+  logic rst;
+  logic l_in;
+  logic r_in;
+  logic [3:0]data_in;
+  logic [1:0]sel;
+  logic [3:0]data_out;
+  
+  
+   universal_shift_reg UUT(.clk(clk),.rst(rst),.l_in(l_in),.r_in(r_in),.data_in(data_in),.data_out(data_out),.sel(sel));
+  
+  
+  initial begin 
+    clk = 0;
+    forever #5 clk = ~clk; 
+  end
+    
+  initial begin
+    data_in = 4'b0;
+    sel = 2'b00;
+    l_in = 0;
+    r_in = 0;
+     rst = 1;
+    @(posedge clk);
+    rst = 0;
+  end 
+  initial begin
+     @(posedge clk);
+    sel = 2'b11;
+    data_in = 4'b1011;
+    
+     @(posedge clk);
+    sel = 2'b10;
+    
+     @(posedge clk);
+    sel = 2'b01;
+    
+     @(posedge clk);
+    sel = 2'b00;
+    
+    @(posedge clk);
+    
+  end 
+  
+    initial begin
+         $monitor("time:%0t,rst:%0b,sel:%b,data_in:%b,data_out:%b",$time,rst,sel,data_in,data_out);
+      #200 $finish;
+    end 
+    
+
+    
+  
+  
+endmodule
