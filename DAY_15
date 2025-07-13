@@ -6,7 +6,7 @@ module PIPO(input logic clk,rst,sel,
     
     if (rst)begin
       d_out <= 4'b0000;
-    end 
+    end   
     
    else if (sel == 1'b0)
       d_out <= d_in;
