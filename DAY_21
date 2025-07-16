@@ -1,0 +1,92 @@
+module dual_port_RAM(input logic clk,re_a,re_b ,
+                     input logic [7:0]din_a,[7:0]din_b,
+                     input logic [2:0]add_a,[2:0]add_b,
+                     output logic [7:0]dout_a,
+                     output logic [7:0]dout_b);
+  
+  initial dout_a = 8'b0;
+  initial dout_b = 8'b0;
+  
+  
+  reg [7:0]ram[7:0];
+  
+  always@(posedge clk)begin
+    
+    if(re_a)begin
+      ram[add_a]<=din_a; end
+    
+    else begin
+      dout_a<=ram[add_a];
+    end
+    
+  end
+  
+  
+  always@(posedge clk)begin
+    
+    if(re_b)begin
+      ram[add_b]<=din_b; end
+    else begin
+      dout_b<=ram[add_b];
+    end
+    
+  end
+  
+  
+endmodule
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+module tb;
+  
+  logic re_a,re_b,clk;
+  logic[7:0]din_a,din_b;
+  logic [2:0]add_a,add_b;
+  logic [7:0]dout_a,dout_b;
+  
+  
+  dual_port_RAM uut(.clk(clk),.re_a(re_a),.re_b(re_b),.din_a(din_a),.din_b(din_b),.add_a(add_a),.add_b(add_b),.dout_a(dout_a),.dout_b(dout_b));
+  
+  
+initial begin
+  clk = 0;
+  forever #5 clk = ~clk;
+end 
+  
+  initial begin
+    re_a = 0;
+    re_b = 0;
+    din_a = 8'd0;
+    din_b = 8'd0;
+    add_a = 3'd0;
+    add_b = 3'd0;
+
+    @(posedge clk);
+    add_a = 3'd2;
+    add_b = 3'd5;
+
+    din_a = 8'd5;
+    din_b = 8'd10;
+
+    @(posedge clk);
+    re_a = 1;  // Write on port A
+    re_b = 1;  // Write on port B
+
+    @(posedge clk);
+    re_a = 0;  // Read on port A
+    re_b = 0;  // Read on port B
+
+    @(posedge clk);
+
+    #20;
+    $finish;
+    
+  end 
+  initial begin
+    $monitor("clk=%0t \tdin_a=%0d \tdin_b=%0d \tre_a=%0d \tre_b=%0d \tadd_a=%0d \tadd_b=%0d \tdout_a=%0d \tdout_b=%0d",
+             $time, din_a, din_b, re_a, re_b, add_a, add_b, dout_a, dout_b);
+  end
+  
+endmodule
+
+        
