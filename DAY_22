@@ -1,0 +1,68 @@
+module dff(input logic din,clk,rst,output logic q,qbar );
+  always@(posedge clk)begin
+    if(rst)begin
+      q    <= 0;
+      qbar <= 1;
+    end 
+    
+    else begin
+      q    <= din;
+      qbar <= ~din;
+      
+      end 
+  end   
+endmodule 
+/////////////////////////////////////////////////////////////////////////
+
+`include "D_ff.sv"
+
+module johnson_UP_counter(input logic clk,rst,output logic [7:0]d_out);
+  
+  wire a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p;
+  
+  dff d1(p,clk,rst,a,b);
+  dff d2(a,clk,rst,c,d);
+  dff d3(c,clk,rst,e,f);
+  dff d4(e,clk,rst,g,h);
+  dff d5(g,clk,rst,i,j);
+  dff d6(i,clk,rst,k,l);
+  dff d7(k,clk,rst,m,n);
+  dff d8(m,clk,rst,o,p);  
+       
+  
+  always@(posedge clk)begin
+    if(rst)begin
+     d_out <= 0;  
+    end 
+     
+    else begin
+      d_out <= {o,m,k,i,g,e,c,a};
+    end 
+  end 
+endmodule 
+/////////////////////////////////////////////////////////////////////
+
+module tb;
+  logic clk,rst;
+  logic [7:0]d_out;
+  
+  johnson_UP_counter DUT(.clk(clk),.rst(rst),.d_out(d_out));
+  
+  
+  initial begin
+    rst = 0;
+    clk = 0;
+    forever #5 clk = ~clk;
+  end 
+  
+  initial begin
+    rst = 1;
+     #20;
+    rst = 0;
+  end 
+  initial begin
+    $monitor("clk = %0t , rst = %b , count = %b",$time,rst,d_out);
+    #200 $finish;
+  end 
+  
+endmodule 
