@@ -1,0 +1,55 @@
+module D_FF(input wire din,clk,rst,
+           output reg Q,Qn);
+  always@(posedge clk or negedge rst)begin
+    
+    if(rst)begin
+      Q <= 0;
+      Qn <= 1;
+    end 
+    
+    else begin
+      Q <= din;
+      Qn <= ~din;
+    end 
+  end 
+  
+endmodule 
+
+////////////////////////////////////////////////////////////////
+
+`include "dff.sv"
+
+module top(input wire clk,rst,
+          output reg out);
+  wire Qn;
+  
+D_FF d1(.clk(clk),.rst(rst),.din(Qn),.Q(out),.Qn(Qn));
+  
+  
+endmodule 
+//////////////////////////////////////////////////////////////////
+
+module tb;
+  reg clk,rst;
+  wire out;
+  
+  top uut(.clk(clk),.rst(rst),.out(out));
+  
+  initial begin
+    clk = 0;
+    forever #5 clk = ~clk;
+  end 
+  
+  initial begin
+    rst = 0;
+    #5 rst = 1;           
+    #10 rst = 0;          
+  end
+  
+  initial begin
+    $monitor("clk = %0t , rst = %0b , freq = %0b ",clk,rst,out);
+    #100;
+    $finish;
+  end 
+  
+endmodule 
