@@ -1,0 +1,261 @@
+///////////// DESIGN /////////////
+
+
+module BOOTH_MULTIPLIER(
+  input  logic signed [3:0] b,     // Multiplicand
+  input  logic signed [3:0] q,     // Multiplier  
+  output logic signed [7:0] out    // Product
+);
+  
+  logic signed [8:0] temp;  // 9 bits: [8:5] = A (accumulator), [4:1] = Q (multiplier), [0] = Q₋₁
+  
+  always_comb begin
+    // Initialize: A=0, Q=multiplier, Q₋₁=0
+    temp = {4'b0000, q, 1'b0};  // {A[3:0], Q[3:0], Q₋₁}
+    
+    // Booth algorithm - 4 iterations for 4-bit multiplier
+    for (int i = 0; i < 4; i++) begin
+      case (temp[1:0])  // {Q₀, Q₋₁} - look at bits [1:0]
+        2'b01: temp[8:5] = temp[8:5] + b;  // A = A + B (add multiplicand)
+        2'b10: temp[8:5] = temp[8:5] - b;  // A = A - B (subtract multiplicand)
+        default: ; // 00 or 11: do nothing
+      endcase
+      
+      // Arithmetic right shift (preserve sign bit)
+      temp = {temp[8], temp[8:1]};  // Sign-extend and shift right
+    end
+    
+    // Extract the 8-bit product
+    out = temp[8:1];
+  end
+endmodule
+
+
+
+
+
+//////////////////////////// TB_TOP /////////////////////////////////
+
+
+`include "interface.sv"
+`include "test.sv"
+
+
+
+module tb;
+  infb inff();
+  test tst(inff);
+
+  BOOTH_MULTIPLIER DUT(.b(inff.b),.q(inff.q),.out(inff.out));
+
+
+  initial begin
+    #500;
+    $finish;
+  end
+endmodule
+
+
+
+
+
+/////////////////////////// DRIVER ////////////////////////////////////////
+
+
+class driver;
+  virtual infb inf;
+  mailbox gen2drv;
+  
+  function new(virtual infb inf,mailbox gen2drv);
+    this.gen2drv = gen2drv;
+    this.inf = inf;
+  endfunction
+  
+  task run();
+    for(int i = 0 ; i < 10 ; i++) begin
+    var transaction trans;
+
+    gen2drv.get(trans);
+    inf.b <= trans.b;
+    inf.q <= trans.q;
+    #1;
+    trans.display("[DRV]");
+  end 
+  endtask
+  
+endclass 
+
+
+
+//////////////////////////////// MONITOR /////////////////////////////////
+
+
+class monitor;
+  
+  virtual infb inf;
+  mailbox  mon2scb;
+
+  function new(virtual infb inf,mailbox  mon2scb);
+    this.inf = inf;
+    this.mon2scb = mon2scb;
+  endfunction
+  
+  task run;
+
+   for(int i = 0; i < 10; i++) begin
+      var transaction trans = new();
+      #1;
+      trans = new();
+      trans.b = inf.b;
+      trans.q = inf.q;
+      trans.out = inf.out;
+      trans.display("[MON]");
+      mon2scb.put(trans);
+    end 
+    
+    
+  endtask
+
+endclass
+
+
+
+
+////////////////////////// TRANSACTION /////////////////////////
+
+class transaction;
+  rand var logic signed [3:0] b;
+  rand var logic signed [3:0] q;
+  var logic signed [7:0] out;
+
+  function void display(string name);
+    $display("****************** %s ******************", name);
+    $display("Value of b = %0d\tq = %0d\tout = %0d", b, q, out);
+  endfunction
+
+  constraint data_c {
+    b inside {[-15:15]};
+    q inside {[-15:15]};
+  }
+endclass
+
+
+////////////////////// TEST ///////////////////////////////
+
+`include "environment.sv"
+
+program test(infb inff);
+  environment env;
+  
+  initial begin 
+    env = new(inff);
+    env.main();
+  end
+
+endprogram
+
+
+/////////////////////// GENERATOR ////////////////////////
+
+
+class generator;
+  transaction trans;
+  mailbox gen2drv;
+ 
+  function new(mailbox gen2drv);
+    this.gen2drv = gen2drv;
+  endfunction
+
+  task run();
+    for(int i = 0; i < 10 ; i++)begin
+      trans = new();
+      assert (trans.randomize()) else $display("Randomization failed");
+      trans.display("[GEN]");
+      gen2drv.put(trans);
+      #1;
+    end 
+    
+  endtask
+endclass
+
+
+///////////////////////// INTERFACE ///////////////////////
+
+
+interface infb;
+  
+  logic signed [3:0]b;
+  logic signed [3:0]q;
+  logic signed [7:0]out;
+
+endinterface
+
+
+/////////////////////// SCOREBOARD /////////////////////////
+
+class scoreboard;
+  
+  mailbox mon2scb;
+  
+  function new(mailbox mon2scb);
+    this.mon2scb = mon2scb;
+  endfunction
+  						
+    task run();
+      
+      for(int i = 0; i < 10; i++) begin
+       var transaction trans;
+        mon2scb.get(trans);
+        trans.display("[SCB]");
+        if((trans.b*trans.q) == trans.out)begin
+          $display("************ PASS **********");
+        end 
+        else 
+          $display("************** FAIL **************");
+
+          $display("//////////////////////////Trasaction Done////////////////////////////////");
+          $display("                                                                          ");
+        
+      end 
+    endtask
+    
+endclass
+
+////////////////////////////// ENVIRONMENT ///////////////////////////////
+
+`include "transaction.sv"
+`include "generator.sv"
+`include "driver.sv"
+`include "monitor.sv"
+`include "scoreboard.sv"
+
+
+class environment;
+  virtual infb inf;
+  generator gen;
+  driver drv;
+  monitor mon;
+  scoreboard scb;
+  
+  mailbox gen2drv;
+  mailbox mon2scb;
+
+  function new(virtual infb inf);
+    this.inf = inf;
+    gen2drv = new();
+    mon2scb = new();
+    gen = new(gen2drv);
+    drv = new(inf, gen2drv);
+    mon = new(inf, mon2scb);
+    scb = new(mon2scb);
+  endfunction
+
+  task main();
+    fork
+      gen.run();
+      drv.run();
+      mon.run();
+      scb.run();
+    join
+  endtask
+endclass
