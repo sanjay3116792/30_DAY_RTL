@@ -64,9 +64,9 @@ endmodule
 
 class driver;
   virtual infb inf;
-  mailbox gen2drv;
+  mailbox #(transaction) gen2drv;
   
-  function new(virtual infb inf,mailbox gen2drv);
+  function new(virtual infb inf,mailbox #(transaction) gen2drv);
     this.gen2drv = gen2drv;
     this.inf = inf;
   endfunction
@@ -93,9 +93,9 @@ endclass
 class monitor;
   
   virtual infb inf;
-  mailbox  mon2scb;
+  mailbox #(transaction)  mon2scb;
 
-  function new(virtual infb inf,mailbox  mon2scb);
+  function new(virtual infb inf,mailbox #(transaction)  mon2scb);
     this.inf = inf;
     this.mon2scb = mon2scb;
   endfunction
@@ -160,9 +160,9 @@ endprogram
 
 class generator;
   transaction trans;
-  mailbox gen2drv;
+  mailbox #(transaction) gen2drv;
  
-  function new(mailbox gen2drv);
+  function new(mailbox #(transaction) gen2drv);
     this.gen2drv = gen2drv;
   endfunction
 
@@ -195,9 +195,9 @@ endinterface
 
 class scoreboard;
   
-  mailbox mon2scb;
+  mailbox #(transaction) mon2scb;
   
-  function new(mailbox mon2scb);
+  function new(mailbox #(transaction) mon2scb);
     this.mon2scb = mon2scb;
   endfunction
   						
@@ -237,8 +237,8 @@ class environment;
   monitor mon;
   scoreboard scb;
   
-  mailbox gen2drv;
-  mailbox mon2scb;
+  mailbox #(transaction) gen2drv;
+  mailbox #(transaction) mon2scb;
 
   function new(virtual infb inf);
     this.inf = inf;
