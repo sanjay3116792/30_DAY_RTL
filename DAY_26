@@ -1,0 +1,316 @@
+///////////// DESIGN /////////////
+
+module ALU #(parameter width = 8)
+  (
+  input logic [3:0]sel,
+  input logic [width-1:0] a,
+  input logic [width-1:0] b,
+  input logic rst,clk,
+  output logic [(2*$bits(a))-1:0]result
+);
+  
+  always@(posedge clk)begin
+    if(rst)begin
+      result  <= 0;
+    end 
+    
+    else begin
+    case(sel)
+      
+      4'd0 : result <= a + b;
+      4'd1 : result <= a - b;
+      4'd2 : result <= a * b;
+      4'd3 : result <= b != 0 ? a / b : 0;
+      4'd4 : result <= a & b;
+      4'd5 : result <= a | b;
+      4'd6 : result <= a ^ b;
+      4'd7 : result <= ~(a & b);
+      4'd8 : result <= ~(a | b);
+      4'd9 : result <= ~(a ^ b);
+      4'd10 : result <= ~a;
+      4'd11 : result <= ~b;
+      4'd12 : result <= a >>1;
+      4'd13 : result <= b >>1;
+      4'd14 : result <= a < b;
+      4'd15 : result <= a > b;
+      
+    endcase
+      
+    end 
+    
+  end 
+  
+endmodule 
+
+
+//////////////////////////// TB_TOP /////////////////////////////////
+
+`timescale 1ns/1ps
+`include "interface.sv"
+`include "test.sv"
+
+
+module tb;
+  inf #(8) inff();
+  test tst(inff);
+
+  ALU #(8) DUT(.a(inff.a),.b(inff.b),.sel(inff.sel),.rst(inff.rst),.clk(inff.clk),.result(inff.result));
+
+  initial begin
+    inff.clk = 0;
+    forever #20 inff.clk = ~ inff.clk;
+  end 
+  
+  initial begin
+    inff.rst = 1;
+    inff.a = 0; inff.b = 0; inff.sel = 0;
+    repeat(3) @(posedge inff.clk);
+    inff.rst =  0;
+  end 
+  
+  
+  
+  initial begin
+    $dumpfile("dump.vcd");
+    $dumpvars;
+  end 
+  
+  
+  initial begin
+    repeat (25) @(posedge inff.clk);
+    $finish();
+  end 
+endmodule 
+
+/////////////////////////// DRIVER ////////////////////////////////////////
+
+class driver;
+  
+  virtual inf #(8) inff;
+  mailbox #(transaction) gen2drv;
+  
+  function new(virtual inf #(8) inff,mailbox #(transaction) gen2drv);
+    this.gen2drv = gen2drv;
+    this.inff = inff;
+  endfunction
+  
+  task run();
+    @(negedge inff.rst);
+    for(int i = 0 ; i< 16 ; i++)begin
+      transaction #(8) trans;
+      gen2drv.get(trans);
+      @(negedge inff.clk);
+      inff.a <= trans.a;
+      inff.b <= trans.b;
+      inff.sel <= trans.sel;
+      @(posedge inff.clk);
+      trans.display("[DRV]");
+    end 
+  endtask
+endclass
+
+//////////////////////////////// MONITOR /////////////////////////////////
+
+class monitor;
+  virtual inf #(8) inff;
+  mailbox #(transaction) mon2scb;
+  
+  function new(virtual inf #(8) inff,mailbox #(transaction) mon2scb);
+    this.mon2scb = mon2scb;
+    this.inff = inff;
+  endfunction
+    
+   task run();
+     @(negedge inff.rst);
+    for(int i = 0 ; i < 16 ; i++)begin
+      transaction #(8) trans = new();
+      @(posedge inff.clk);
+      #1;
+      trans.a = inff.a;
+      trans.b = inff.b;
+      trans.sel = inff.sel;
+      trans.result = inff.result;
+      trans.clk = inff.clk;
+      trans.rst = inff.rst;
+      mon2scb.put(trans);
+      trans.display("[MON]");
+    end 
+    endtask
+endclass
+
+
+////////////////////////// TRANSACTION /////////////////////////
+
+class transaction #(parameter width = 8);
+  randc logic [3:0]sel;
+  randc logic [width-1:0] a;
+  randc logic [width-1:0] b;
+  logic rst,clk;
+  logic [(2*$bits(a))-1:0] result;
+  
+  constraint data{
+    sel inside {[0:15]};
+  }
+  
+  function void display(string name);
+    $display("*************** %s ***************",name);
+    $display("CLK = %0t , RST = %d , SEL = %d , A = %0d , B = %0d , RESULT = %0d",$time,rst,sel,a,b,result);
+    //$display("\n");
+  endfunction
+  
+endclass
+
+
+////////////////////// TEST ///////////////////////////////
+
+`include "environment.sv"
+
+program test (inf inff);
+  environment env;
+  
+  initial begin
+    env = new(inff);
+    env.main();
+  end 
+endprogram 
+
+
+/////////////////////// GENERATOR ////////////////////////
+
+class generator;
+  transaction #(8) trans;
+  mailbox #(transaction) gen2drv;
+  virtual inf #(8) vif;
+  
+  function new(virtual inf #(8) vif,mailbox #(transaction) gen2drv);
+    this.gen2drv = gen2drv;
+    this.vif = vif;
+  endfunction
+  
+  task run();
+    @(negedge vif.rst);
+    for(int i = 0 ; i < 16 ; i++ )begin
+      trans = new();
+      assert (trans.randomize()) else $display("Randomization failed"); 
+      trans.clk = vif.clk;
+      trans.rst = vif.rst;
+      trans.display("[GEN]");
+      gen2drv.put(trans);
+      @(posedge vif.clk);
+    end 
+  endtask
+  
+endclass
+
+
+///////////////////////// INTERFACE ///////////////////////
+
+
+interface inf #(parameter width = 8);
+  logic [3:0]sel;
+  logic [width-1:0] a;
+  logic [width-1:0] b;
+  logic rst;
+  logic clk;
+  logic [(2*$bits(a))-1:0]result;
+endinterface
+
+/////////////////////// SCOREBOARD /////////////////////////
+
+class scoreboard #(parameter width = 8);
+  
+  mailbox #(transaction) mon2scb;
+  
+  function new(mailbox #(transaction) mon2scb);
+    this.mon2scb = mon2scb;
+  endfunction
+  
+  task run();
+    
+  logic [(2*width)-1:0] res;
+      
+  for(int i = 0 ; i < 16 ; i ++)begin
+    transaction #(8) trans;
+    mon2scb.get(trans);
+    case(trans.sel)
+      4'd0  : res = trans.a + trans.b;
+      4'd1  : res = trans.a - trans.b;
+      4'd2  : res = trans.a * trans.b;
+      4'd3  : res = (trans.b != 0) ? trans.a / trans.b : 0;
+      4'd4  : res = trans.a & trans.b;
+      4'd5  : res = trans.a | trans.b;
+      4'd6  : res = trans.a ^ trans.b;
+      4'd7  : res = ~(trans.a & trans.b);
+      4'd8  : res = ~(trans.a | trans.b);
+      4'd9  : res = ~(trans.a ^ trans.b);
+      4'd10 : res = ~trans.a;
+      4'd11 : res = ~trans.b;
+      4'd12 : res = trans.a >> 1;
+      4'd13 : res = trans.b >> 1;
+      4'd14 : res = trans.a < trans.b;
+      4'd15 : res = trans.a > trans.b;
+    endcase
+    trans.display("[SCB]");
+    if(res == trans.result)begin
+      $display("********************* PASS *************************");
+    end 
+    
+    else begin
+      $display("********************* FAIL *************************");
+      
+    end
+   // $display("\n");
+    $display("//////////////////////////Trasaction Done////////////////////////////////");
+   // $display("\n");
+  end 
+    
+    
+  endtask
+  
+endclass
+
+
+////////////////////////////// ENVIRONMENT ///////////////////////////////
+
+`include "transaction.sv"
+`include "generator.sv"
+`include "driver.sv"
+`include "monitor.sv"
+`include "scoreboard.sv"
+
+
+class environment;
+  transaction #(8) trans;
+  generator gen;
+  driver drv;
+  monitor mon;
+  scoreboard #(8) scb;
+  virtual interface inf #(8) inff;
+    
+    mailbox #(transaction) gen2drv;
+    mailbox #(transaction) mon2scb;
+    
+    function new(virtual inf #(8) inff);
+      gen2drv = new();
+      mon2scb = new();
+      this.inff = inff;
+      trans = new();
+      gen = new(inff,gen2drv);
+      drv = new(inff,gen2drv);
+      mon = new(inff,mon2scb);
+      scb = new(mon2scb);
+    endfunction
+    
+    task main();
+      fork 
+        gen.run();
+        drv.run();
+        mon.run();
+        scb.run();
+      join
+    endtask
+  
+  
+endclass
+
+
